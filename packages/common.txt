@@ -1,0 +1,19 @@
+# Common packages (distro-agnostic names where possible)
+zsh
+git
+vim
+tmux
+curl
+wget
+htop
+jq
+tree
+unzip
+stow
+make
+gcc
+python3
+lsof
+ncdu
+fzf
+neofetch

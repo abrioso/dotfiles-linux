@@ -1,0 +1,14 @@
+# RHEL/AlmaLinux/Fedora-specific packages
+ripgrep
+fd-find
+bat
+python3-pip
+nodejs
+npm
+gh
+openssh-server
+net-tools
+traceroute
+bind-utils
+tldr
+gcc-c++

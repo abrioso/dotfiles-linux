@@ -1,0 +1,15 @@
+# Ubuntu/Debian-specific packages
+ripgrep
+fd-find
+bat
+eza
+python3-pip
+nodejs
+npm
+gh
+openssh-server
+net-tools
+traceroute
+dnsutils
+tldr
+build-essential
