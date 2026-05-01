@@ -6,11 +6,12 @@ This project uses **gitflow**:
 
 | Branch | Purpose | Merges into |
 |--------|---------|-------------|
-| `main` | Stable releases | — |
-| `develop` | Next release integration | `main` (via release PR) |
-| `feature/*` | New functionality | `develop` |
-| `hotfix/*` | Critical fixes | `main` + `develop` |
-| `release/*` | Release prep | `main` |
+| main | Stable releases | — |
+| develop | Next release integration | main (via release PR) |
+| feature/* | New functionality | develop |
+| fix/* | Non-urgent bug fixes | develop |
+| hotfix/* | Critical fixes | main + develop |
+| release/* | Release prep | main |
 
 ## How to Contribute
 
@@ -59,6 +60,6 @@ This project uses **gitflow**:
 ## Release Process
 
 1. Create `release/vX.Y.Z` from `develop`
-2. Bump version references, update CHANGELOG
+2. Bump version references, update CHANGELOG.md
 3. PR into `main`, tag after merge
 4. Merge `main` back into `develop`
