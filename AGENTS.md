@@ -1,15 +1,18 @@
 # AI Agent Instructions
 
 This repository follows **gitflow** branching and requires **Pull Requests** for all changes.
+It shares its policy with [dotfiles-windows](https://github.com/abrioso/dotfiles-windows) and
+[dotfiles-termux](https://github.com/abrioso/dotfiles-termux); `dotfiles-windows` is the reference.
 
 ## Branching Model
 
 - `main` — production-ready, tagged releases only
 - `develop` — integration branch for next release
 - `feature/<name>` — new features (branch from `develop`)
-- `fix/<name>` — non-urgent bug fixes (branch from `develop`)
+- `fix/<name>` — non-urgent fixes (branch from `develop`)
 - `hotfix/<name>` — urgent fixes (branch from `main`, merge to both `main` and `develop`)
-- `release/<version>` — release prep (branch from `develop`, merge to `main`)
+- `release/<version>` — release prep (branch from `develop`; merge to `main` and reconcile
+  release-only commits back to `develop` before deletion)
 
 ## Rules for Agents
 
@@ -18,7 +21,7 @@ This repository follows **gitflow** branching and requires **Pull Requests** for
 3. **Commits**: Use conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`)
 4. **One logical change per PR** — don't bundle unrelated changes.
 5. **PR description**: Explain what and why. Link related issues if any.
-6. **Tests/validation**: Run shellcheck on all `.sh` files before committing.
+6. **Tests/validation**: Run `./tests/validate.sh` (syntax, shellcheck, whitespace) before committing.
 7. **Worktrees**: Use `git worktree` for parallel work instead of stashing or switching branches.
 
 ## Workflow Example
@@ -29,7 +32,8 @@ git checkout develop
 git pull origin develop
 git checkout -b feature/add-docker-config
 
-# Work, commit
+# Work, validate, commit
+./tests/validate.sh
 git add <relevant-files>
 git commit -m "feat: add docker daemon config"
 
@@ -43,6 +47,8 @@ gh pr create --base develop --title "feat: add docker config" --body "Adds daemo
 - Shell scripts: `#!/bin/bash` with `set -euo pipefail`
 - Pass `shellcheck` with no warnings
 - All scripts must be idempotent (safe to re-run)
+- Machine-specific values (Git identity, hooks path) live in untracked `~/.gitconfig.local` and
+  `~/.zshrc.local`, never in tracked files
 - Document new features in README.md and new packages in docs/PACKAGES.md
 - Keep package lists sorted alphabetically
 

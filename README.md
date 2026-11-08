@@ -21,6 +21,8 @@ dotfiles-linux/
 ├── packages/               # Package lists by distro
 ├── scripts/                # Helper scripts
 ├── bin/                    # Custom scripts (added to PATH)
+├── git-hooks/              # Gitflow pre-commit/pre-push hooks (shared with dotfiles-windows)
+├── tests/validate.sh       # Local + CI validation (bash -n, shellcheck, whitespace)
 └── docs/                   # Documentation
 ```
 
@@ -32,7 +34,7 @@ cd ~/dotfiles-linux
 ./bootstrap.sh
 ```
 
-For servers (minimal install, no GUI packages):
+For servers (minimal install: only `packages/common.txt`, no distro-specific extras):
 ```bash
 ./bootstrap.sh --minimal
 ```
@@ -61,8 +63,24 @@ For servers (minimal install, no GUI packages):
 ## ⚙️ Customization
 
 - Add local overrides in `~/.zshrc.local` (sourced automatically)
+- Git identity and other machine-specific Git settings live in `~/.gitconfig.local`, created by
+  `install.sh` on first run and included by the tracked `.gitconfig`; the tracked file never
+  changes on a machine
 - Add custom scripts to `bin/`
 - See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for adding new stow packages
+
+## ✅ Validation
+
+Pull requests and pushes to `develop` or `main` run `bash -n`, shellcheck, executable-bit and
+whitespace checks through GitHub Actions. Run the same checks locally:
+
+```bash
+./tests/validate.sh
+./tests/validate.sh --base-ref origin/develop   # also check the committed range
+```
+
+Releases follow the `vYYYY.MM.N` Calendar Versioning and Git Flow process documented in
+[Gitflow Policy](docs/GITFLOW.md).
 
 ## ✅ Tested On
 
@@ -74,6 +92,16 @@ For servers (minimal install, no GUI packages):
 
 - [Package List & Categories](docs/PACKAGES.md)
 - [Customization Guide](docs/CUSTOMIZATION.md)
+- [Gitflow Policy](docs/GITFLOW.md)
+- [Contributing](CONTRIBUTING.md) and [AI agent instructions](AGENTS.md)
+
+## 🔗 Related repositories
+
+The same owner keeps one dotfiles repository per platform. All of them follow the same gitflow,
+Conventional Commits and `vYYYY.MM.N` release policy; `dotfiles-windows` is the reference.
+
+- [dotfiles-windows](https://github.com/abrioso/dotfiles-windows) — Windows 11 (PowerShell, winget, WSL)
+- [dotfiles-termux](https://github.com/abrioso/dotfiles-termux) — Android Termux (zsh, vim, same shell aliases)
 
 ## 🙏 Credits
 
