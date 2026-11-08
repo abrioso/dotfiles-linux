@@ -30,7 +30,7 @@ backup_file() {
     local file="$1"
     if [ -e "$file" ] && [ ! -L "$file" ]; then
         mkdir -p "$BACKUP_DIR"
-        local rel_path="${file#$HOME/}"
+        local rel_path="${file#"$HOME"/}"
         local backup_path="$BACKUP_DIR/$rel_path"
         mkdir -p "$(dirname "$backup_path")"
         if [ "$DRY_RUN" = true ]; then
@@ -42,24 +42,38 @@ backup_file() {
     fi
 }
 
-# Prompt for git config
+# Create ~/.gitconfig.local (untracked) with the Git identity on first run.
+# The tracked config/git/.gitconfig only carries shared defaults and includes it.
 setup_git_config() {
-    local git_config="$CONFIG_DIR/git/.gitconfig"
-    if grep -q "PLACEHOLDER" "$git_config" 2>/dev/null; then
-        if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
-            read -rp "Git user name [abrioso]: " git_name
-            git_name="${git_name:-abrioso}"
-            read -rp "Git email [akbrioso@iseg.ulisboa.pt]: " git_email
-            git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
-        else
-            git_name="abrioso"
-            git_email="akbrioso@iseg.ulisboa.pt"
-        fi
-        if [ "$DRY_RUN" = false ]; then
-            sed -i "s/NAME_PLACEHOLDER/$git_name/g" "$git_config"
-            sed -i "s/EMAIL_PLACEHOLDER/$git_email/g" "$git_config"
-        fi
+    local local_config="$HOME/.gitconfig.local"
+    if [ -f "$local_config" ]; then
+        info "Git identity already configured in $local_config"
+        return 0
     fi
+    local git_name git_email
+    if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
+        read -rp "Git user name [abrioso]: " git_name
+        git_name="${git_name:-abrioso}"
+        read -rp "Git email [akbrioso@iseg.ulisboa.pt]: " git_email
+        git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
+    else
+        git_name="abrioso"
+        git_email="akbrioso@iseg.ulisboa.pt"
+    fi
+    if [ "$DRY_RUN" = true ]; then
+        info "[DRY-RUN] Would create: $local_config"
+        return 0
+    fi
+    cat > "$local_config" <<EOF_LOCAL
+# ~/.gitconfig.local — machine-specific Git settings (not tracked by dotfiles-linux)
+[user]
+    name = $git_name
+    email = $git_email
+# Uncomment to enforce the gitflow hooks on every repository of this machine:
+#[core]
+#    hooksPath = $SCRIPT_DIR/git-hooks
+EOF_LOCAL
+    success "Created $local_config"
 }
 
 install_with_stow() {
@@ -86,7 +100,7 @@ install_manual() {
         package=$(basename "$package_dir")
         # Find all files recursively in the package dir
         while IFS= read -r -d '' file; do
-            local rel_path="${file#$package_dir}"
+            local rel_path="${file#"$package_dir"}"
             local target="$HOME/$rel_path"
             backup_file "$target"
             mkdir -p "$(dirname "$target")"
