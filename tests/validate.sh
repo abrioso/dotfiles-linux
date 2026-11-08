@@ -88,12 +88,10 @@ info "Checking executable bits on scripts..."
 missing_exec=()
 for file in "${scripts[@]}" "${python_files[@]}"; do
     if head -n 1 "$file" 2>/dev/null | grep -q '^#!'; then
-        # Tracked files: check the index mode. Untracked files have no index
-        # entry yet, so check the filesystem mode that git add will record.
+        # The worktree bit is what the next git add records, so check it for
+        # every file; tracked files must also already be 100755 in the index.
         mode=$(git ls-files -s -- "$file" | awk '{print $1}')
-        if [ -n "$mode" ]; then
-            [ "$mode" = "100755" ] || missing_exec+=("$file")
-        elif [ ! -x "$file" ]; then
+        if [ ! -x "$file" ] || { [ -n "$mode" ] && [ "$mode" != "100755" ]; }; then
             missing_exec+=("$file")
         fi
     fi
