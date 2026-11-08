@@ -67,7 +67,8 @@ For servers (minimal install: only `packages/common.txt`, no distro-specific ext
 - Git identity and other machine-specific Git settings live in `~/.gitconfig.local`, created by
   `install.sh` on first run (prompting, or from `GIT_USER_NAME`/`GIT_USER_EMAIL`, or from the
   identity git already resolves) and included by the tracked `.gitconfig`; the tracked file never
-  changes on a machine
+  changes on a machine. A pre-existing `~/.gitconfig` also has its `core.hooksPath` and
+  `credential.helper` carried over; the rest stays in `~/.dotfiles-backup/<timestamp>/.gitconfig`
 - Add custom scripts to `bin/`
 - See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for adding new stow packages
 
