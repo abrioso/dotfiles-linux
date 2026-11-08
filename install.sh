@@ -43,37 +43,50 @@ backup_file() {
 }
 
 # Create ~/.gitconfig.local (untracked) with the Git identity on first run.
-# The tracked config/git/.gitconfig only carries shared defaults and includes it.
+# The tracked .gitconfig only carries shared defaults and includes it. An
+# existing file (for example with only core.hooksPath) is completed, never
+# overwritten.
 setup_git_config() {
     local local_config="$HOME/.gitconfig.local"
-    if [ -f "$local_config" ]; then
-        info "Git identity already configured in $local_config"
+    if ! command -v git >/dev/null 2>&1; then
+        warn "git not found; skipping Git identity setup."
         return 0
     fi
     local git_name git_email
-    if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
-        read -rp "Git user name [abrioso]: " git_name
-        git_name="${git_name:-abrioso}"
-        read -rp "Git email [akbrioso@iseg.ulisboa.pt]: " git_email
-        git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
-    else
-        git_name="abrioso"
-        git_email="akbrioso@iseg.ulisboa.pt"
-    fi
-    if [ "$DRY_RUN" = true ]; then
-        info "[DRY-RUN] Would create: $local_config"
+    git_name=$(git config --file "$local_config" --get user.name 2>/dev/null || true)
+    git_email=$(git config --file "$local_config" --get user.email 2>/dev/null || true)
+    if [ -n "$git_name" ] && [ -n "$git_email" ]; then
+        info "Git identity already configured in $local_config"
         return 0
     fi
-    cat > "$local_config" <<EOF_LOCAL
+    if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
+        if [ -z "$git_name" ]; then
+            read -rp "Git user name [abrioso]: " git_name
+            git_name="${git_name:-abrioso}"
+        fi
+        if [ -z "$git_email" ]; then
+            read -rp "Git email [akbrioso@iseg.ulisboa.pt]: " git_email
+            git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
+        fi
+    else
+        git_name="${git_name:-abrioso}"
+        git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
+    fi
+    if [ "$DRY_RUN" = true ]; then
+        info "[DRY-RUN] Would set user.name/user.email in $local_config"
+        return 0
+    fi
+    if [ ! -f "$local_config" ]; then
+        cat > "$local_config" <<EOF_LOCAL
 # ~/.gitconfig.local — machine-specific Git settings (not tracked by dotfiles-linux)
-[user]
-    name = $git_name
-    email = $git_email
 # Uncomment to enforce the gitflow hooks on every repository of this machine:
 #[core]
 #    hooksPath = $SCRIPT_DIR/git-hooks
 EOF_LOCAL
-    success "Created $local_config"
+    fi
+    git config --file "$local_config" user.name "$git_name"
+    git config --file "$local_config" user.email "$git_email"
+    success "Configured Git identity in $local_config"
 }
 
 install_with_stow() {
