@@ -135,14 +135,19 @@ install_manual() {
     done
 }
 
-# Carry the documented machine-specific keys of a pre-existing regular
-# ~/.gitconfig into ~/.gitconfig.local before the tracked file replaces it.
+# Carry the documented machine-specific keys of a pre-existing ~/.gitconfig
+# (regular file or symlink to another manager's file) into ~/.gitconfig.local before the tracked file replaces it.
 # Only keys missing from the local file are copied; everything else stays in
 # the backup so shared defaults are not silently overridden.
 migrate_git_settings() {
     local local_config="$HOME/.gitconfig.local" old_config="$HOME/.gitconfig" key value
     command -v git >/dev/null 2>&1 || return 0
-    { [ -f "$old_config" ] && [ ! -L "$old_config" ]; } || return 0
+    [ -f "$old_config" ] || return 0
+    # A symlink is read through (another dotfiles manager may own the target);
+    # only a link that already points at this repository's file has nothing to carry.
+    if [ -L "$old_config" ] && [ "$(readlink -f "$old_config")" = "$(readlink -f "$CONFIG_DIR/git/.gitconfig")" ]; then
+        return 0
+    fi
     for key in core.hooksPath credential.helper; do
         if git config --file "$local_config" --get "$key" >/dev/null 2>&1; then
             continue
