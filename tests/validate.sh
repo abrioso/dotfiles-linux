@@ -88,14 +88,18 @@ info "Checking executable bits on scripts..."
 missing_exec=()
 for file in "${scripts[@]}" "${python_files[@]}"; do
     if head -n 1 "$file" 2>/dev/null | grep -q '^#!'; then
+        # Tracked files: check the index mode. Untracked files have no index
+        # entry yet, so check the filesystem mode that git add will record.
         mode=$(git ls-files -s -- "$file" | awk '{print $1}')
-        if [ -n "$mode" ] && [ "$mode" != "100755" ]; then
+        if [ -n "$mode" ]; then
+            [ "$mode" = "100755" ] || missing_exec+=("$file")
+        elif [ ! -x "$file" ]; then
             missing_exec+=("$file")
         fi
     fi
 done
 if [ ${#missing_exec[@]} -gt 0 ]; then
-    error "Scripts with a shebang are not executable in the index: ${missing_exec[*]} (fix with: git update-index --chmod=+x <file>)"
+    error "Scripts with a shebang are not executable: ${missing_exec[*]} (fix with: chmod +x <file>, or git update-index --chmod=+x <file> for tracked files)"
     exit 1
 fi
 success "Executable bits are consistent."
