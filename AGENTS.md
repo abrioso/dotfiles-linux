@@ -46,6 +46,9 @@ gh pr create --base develop --title "feat: add docker config" --body "Adds daemo
 
 - Shell scripts: `#!/bin/bash` with `set -euo pipefail`
 - Pass `shellcheck` with no warnings
+- Exception: `git-hooks/*` are POSIX `#!/bin/sh` scripts without strict mode, shared verbatim with
+  `dotfiles-windows` (Git for Windows runs hooks through its own `sh`). Keep the three copies
+  byte-identical and change them in all repositories at once; never bash-ify one copy
 - All scripts must be idempotent (safe to re-run)
 - Machine-specific values (Git identity, hooks path) live in untracked `~/.gitconfig.local` and
   `~/.zshrc.local`, never in tracked files
