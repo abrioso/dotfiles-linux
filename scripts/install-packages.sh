@@ -1,12 +1,15 @@
 #!/bin/bash
 # install-packages.sh — Install packages based on detected distro
+# Usage: scripts/install-packages.sh [true|false]
+#   The optional argument is the minimal flag (default false). In minimal mode
+#   only packages/common.txt is installed; the distro-specific extras are skipped.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source distro detection
-# shellcheck source=detect-distro.sh
+# shellcheck source=scripts/detect-distro.sh
 source "$SCRIPT_DIR/detect-distro.sh"
 
 DISTRO=$(detect_distro)
@@ -80,10 +83,14 @@ esac
 # Install common packages
 install_packages "$REPO_DIR/packages/common.txt"
 
-# Install distro-specific packages
-case "$DISTRO" in
-    debian) install_packages "$REPO_DIR/packages/ubuntu.txt" ;;
-    rhel)   install_packages "$REPO_DIR/packages/rhel.txt" ;;
-esac
+# Install distro-specific packages (skipped in minimal mode)
+if [ "$MINIMAL" = true ]; then
+    info "Minimal mode: skipping distro-specific packages."
+else
+    case "$DISTRO" in
+        debian) install_packages "$REPO_DIR/packages/ubuntu.txt" ;;
+        rhel)   install_packages "$REPO_DIR/packages/rhel.txt" ;;
+    esac
+fi
 
 info "Package installation complete."

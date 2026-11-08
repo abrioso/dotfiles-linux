@@ -2,16 +2,7 @@
 
 ## Branching Strategy
 
-This project uses **gitflow**:
-
-| Branch | Purpose | Merges into |
-|--------|---------|-------------|
-| main | Stable releases | — |
-| develop | Next release integration | main (via release PR) |
-| feature/* | New functionality | develop |
-| fix/* | Non-urgent bug fixes | develop |
-| hotfix/* | Critical fixes | main + develop |
-| release/* | Release prep | main |
+This project uses **gitflow**. See [docs/GITFLOW.md](docs/GITFLOW.md) for the full policy, enforcement details, and workflow examples.
 
 ## How to Contribute
 
@@ -46,20 +37,36 @@ This project uses **gitflow**:
 - Must be idempotent (safe to re-run)
 - Use functions for logical grouping
 - Add `--help` flag for user-facing scripts
+- `git-hooks/*` are the exception: POSIX `#!/bin/sh` without strict mode, byte-identical to the
+  copies in `dotfiles-windows` and the sibling repository. Edit them in all repositories together
+
+Run `./tests/validate.sh --base-ref origin/develop` before committing. This is the same
+validation entry point used in CI (`.github/workflows/validate.yml`).
 
 ### Documentation
 - Update `README.md` when adding features
-- Document new packages in `docs/PACKAGES.md`
+- Document new packages in `docs/PACKAGES.md` and add them to the matching `packages/*.txt` list
 - Keep lists sorted alphabetically
 
 ### Dotfiles (config/)
 - Each application gets its own stow package directory
 - Follow XDG Base Directory spec where possible
 - Add comments explaining non-obvious settings
+- Tracked files hold shared defaults only; machine-specific values go to untracked
+  `~/.gitconfig.local` and `~/.zshrc.local`
 
 ## Release Process
 
-1. Create `release/vX.Y.Z` from `develop`
-2. Bump version references, update CHANGELOG.md
-3. PR into `main`, tag after merge
-4. Merge `main` back into `develop`
+1. Create `release/vYYYY.MM.N` from an up-to-date `origin/develop`.
+2. Apply only release stabilization changes and open a PR into `main`.
+3. Run `./bootstrap.sh` on a disposable VM or container for each supported distro family and confirm
+   a second `./install.sh` run is a no-op.
+4. Merge the production PR with a merge commit.
+5. If the release branch has release-only commits, merge the same branch into `develop` through
+   a second PR; do not merge `main` wholesale back into `develop`.
+6. Tag the verified `main` merge commit and publish the matching GitHub Release.
+7. Delete the release branch only after production and integration reconciliation are complete.
+
+Versions use Calendar Versioning: `vYYYY.MM.N`, for example `v2026.11.0`. `N` normally starts at
+`0` and increments for additional releases in the same month; it may instead be mapped explicitly
+to the day of the month for a date-oriented release identifier.
