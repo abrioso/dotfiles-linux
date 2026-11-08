@@ -107,7 +107,7 @@ if command -v stow &>/dev/null; then
     # Backup conflicting files before stow
     for package_dir in "$CONFIG_DIR"/*/; do
         while IFS= read -r -d '' file; do
-            local rel_path="${file#$package_dir}"
+            rel_path="${file#"$package_dir"}"
             backup_file "$HOME/$rel_path"
         done < <(find "$package_dir" -type f -print0)
     done
