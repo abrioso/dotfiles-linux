@@ -51,9 +51,10 @@ For servers (minimal install: only `packages/common.txt`, no distro-specific ext
    ./install.sh --dry-run
    ```
 
-3. **Force install** (no prompts, use defaults):
+3. **Force install** (never prompts; the Git identity is taken from `GIT_USER_NAME` /
+   `GIT_USER_EMAIL` or from the existing git config, otherwise left for you to set):
    ```bash
-   ./install.sh --force
+   GIT_USER_NAME="Your Name" GIT_USER_EMAIL="you@example.com" ./install.sh --force
    ```
 
 ## 🖼️ Screenshots
@@ -64,7 +65,8 @@ For servers (minimal install: only `packages/common.txt`, no distro-specific ext
 
 - Add local overrides in `~/.zshrc.local` (sourced automatically)
 - Git identity and other machine-specific Git settings live in `~/.gitconfig.local`, created by
-  `install.sh` on first run and included by the tracked `.gitconfig`; the tracked file never
+  `install.sh` on first run (prompting, or from `GIT_USER_NAME`/`GIT_USER_EMAIL`, or from the
+  identity git already resolves) and included by the tracked `.gitconfig`; the tracked file never
   changes on a machine
 - Add custom scripts to `bin/`
 - See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for adding new stow packages

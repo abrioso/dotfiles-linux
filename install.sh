@@ -16,7 +16,8 @@ for arg in "$@"; do
         --help|-h)
             echo "Usage: ./install.sh [--dry-run] [--force]"
             echo "  --dry-run  Show what would be done without making changes"
-            echo "  --force    Skip backup prompts"
+            echo "  --force    Never prompt; Git identity comes from GIT_USER_NAME/GIT_USER_EMAIL"
+            echo "             or the existing git config, otherwise it is left unset"
             exit 0
             ;;
     esac
@@ -42,10 +43,12 @@ backup_file() {
     fi
 }
 
-# Create ~/.gitconfig.local (untracked) with the Git identity on first run.
-# The tracked .gitconfig only carries shared defaults and includes it. An
-# existing file (for example with only core.hooksPath) is completed, never
-# overwritten.
+# Create or complete ~/.gitconfig.local (untracked) with the Git identity.
+# Sources, in order: values already in the local file, GIT_USER_NAME /
+# GIT_USER_EMAIL, the identity Git currently resolves (for example a
+# pre-existing ~/.gitconfig that is about to be replaced), then an interactive
+# prompt. With --force nothing is asked and a missing identity is only
+# reported; no placeholder identity is ever written.
 setup_git_config() {
     local local_config="$HOME/.gitconfig.local"
     if ! command -v git >/dev/null 2>&1; then
@@ -59,18 +62,23 @@ setup_git_config() {
         info "Git identity already configured in $local_config"
         return 0
     fi
+    if [ -z "$git_name" ]; then
+        git_name="${GIT_USER_NAME:-$(git config --global --get user.name 2>/dev/null || true)}"
+    fi
+    if [ -z "$git_email" ]; then
+        git_email="${GIT_USER_EMAIL:-$(git config --global --get user.email 2>/dev/null || true)}"
+    fi
     if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
         if [ -z "$git_name" ]; then
-            read -rp "Git user name [abrioso]: " git_name
-            git_name="${git_name:-abrioso}"
+            read -rp "Git user name: " git_name
         fi
         if [ -z "$git_email" ]; then
-            read -rp "Git email [akbrioso@iseg.ulisboa.pt]: " git_email
-            git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
+            read -rp "Git email: " git_email
         fi
-    else
-        git_name="${git_name:-abrioso}"
-        git_email="${git_email:-akbrioso@iseg.ulisboa.pt}"
+    fi
+    if [ -z "$git_name" ] || [ -z "$git_email" ]; then
+        warn "Git identity not configured. Export GIT_USER_NAME and GIT_USER_EMAIL, run install.sh without --force, or edit $local_config."
+        return 0
     fi
     if [ "$DRY_RUN" = true ]; then
         info "[DRY-RUN] Would set user.name/user.email in $local_config"

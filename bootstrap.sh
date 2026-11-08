@@ -63,9 +63,10 @@ info "Running post-install..."
 "$SCRIPT_DIR/scripts/post-install.sh"
 success "Post-install complete."
 
-# Run dotfile installer
+# Run dotfile installer (prompts for the Git identity unless GIT_USER_NAME/
+# GIT_USER_EMAIL are exported or git already knows it)
 info "Installing dotfiles..."
-"$SCRIPT_DIR/install.sh" --force
+"$SCRIPT_DIR/install.sh"
 success "Dotfiles installed."
 
 echo ""
