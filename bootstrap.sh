@@ -12,7 +12,7 @@ for arg in "$@"; do
         --minimal) MINIMAL=true ;;
         --help|-h)
             echo "Usage: ./bootstrap.sh [--minimal]"
-            echo "  --minimal  Skip GUI packages (for servers)"
+            echo "  --minimal  Install only packages/common.txt; skip distro-specific extras (for servers)"
             exit 0
             ;;
     esac
