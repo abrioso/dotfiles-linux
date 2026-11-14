@@ -29,6 +29,12 @@ warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$1"; }
 
 backup_file() {
     local file="$1"
+    # A path that already resolves into this repository (for example through a
+    # directory symlink that stow folded) is a managed file, not user data:
+    # moving it away would delete it from the checkout.
+    if [ -e "$file" ] && [[ "$(readlink -f "$file")" == "$CONFIG_DIR"/* ]]; then
+        return 0
+    fi
     if [ -e "$file" ] && [ ! -L "$file" ]; then
         mkdir -p "$BACKUP_DIR"
         local rel_path="${file#"$HOME"/}"
