@@ -17,7 +17,19 @@
 ## Local Overrides
 
 - **Zsh**: Create `~/.zshrc.local` for machine-specific aliases/exports
-- **Git**: Use `git config --local` for per-repo settings
+- **Git**: `install.sh` creates `~/.gitconfig.local` with your identity on first run; the tracked
+  `config/git/.gitconfig` includes it. Put every machine-specific value there (identity,
+  `credential.helper`, `core.hooksPath` for the gitflow hooks). Use `git config --local` for
+  per-repo settings.
+
+```ini
+# ~/.gitconfig.local
+[user]
+    name = Your Name
+    email = you@example.com
+[core]
+    hooksPath = /home/you/dotfiles-linux/git-hooks
+```
 
 ## Adding Custom Scripts
 

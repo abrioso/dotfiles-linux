@@ -1,0 +1,34 @@
+name: Validate
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Run repository validation
+        env:
+          VALIDATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          args=()
+          if [ -n "$VALIDATION_BASE_REF" ] && ! printf '%s' "$VALIDATION_BASE_REF" | grep -Eq '^0+$'; then
+            args+=(--base-ref "$VALIDATION_BASE_REF")
+          fi
+          ./tests/validate.sh "${args[@]}"

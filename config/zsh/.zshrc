@@ -13,9 +13,10 @@ plugins=(git sudo z history-substring-search)
 command -v docker &>/dev/null && plugins+=(docker)
 command -v kubectl &>/dev/null && plugins+=(kubectl)
 
-# External plugins (loaded if installed)
-[ -d "$ZSH/custom/plugins/zsh-autosuggestions" ] && plugins+=(zsh-autosuggestions)
-[ -d "$ZSH/custom/plugins/zsh-syntax-highlighting" ] && plugins+=(zsh-syntax-highlighting)
+# External plugins (loaded if installed; same ZSH_CUSTOM fallback as the bootstrap)
+ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
+[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] && plugins+=(zsh-autosuggestions)
+[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && plugins+=(zsh-syntax-highlighting)
 
 # Load Oh My Zsh
 [ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
