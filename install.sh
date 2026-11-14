@@ -152,8 +152,9 @@ migrate_git_settings() {
         if git config --file "$local_config" --get "$key" >/dev/null 2>&1; then
             continue
         fi
+        # Empty values are kept: an empty credential.helper entry is Git's way
+        # of resetting helpers inherited from the system configuration.
         while IFS= read -r value; do
-            [ -n "$value" ] || continue
             if [ "$DRY_RUN" = true ]; then
                 info "[DRY-RUN] Would carry $key=$value into $local_config"
             else
@@ -169,11 +170,23 @@ setup_git_config
 migrate_git_settings
 
 if command -v stow &>/dev/null; then
-    # Backup conflicting files before stow
+    # Backup conflicting files before stow. A symlink that does not point into
+    # this repository (another dotfiles manager) would make stow stop with a
+    # conflict; it has already been read by migrate_git_settings, so remove the
+    # link itself and leave its target untouched.
     for package_dir in "$CONFIG_DIR"/*/; do
         while IFS= read -r -d '' file; do
             rel_path="${file#"$package_dir"}"
-            backup_file "$HOME/$rel_path"
+            target="$HOME/$rel_path"
+            if [ -L "$target" ] && [[ "$(readlink -f "$target")" != "$CONFIG_DIR"/* ]]; then
+                if [ "$DRY_RUN" = true ]; then
+                    info "[DRY-RUN] Would remove foreign symlink: $target -> $(readlink "$target")"
+                else
+                    rm -f "$target"
+                    info "Removed foreign symlink: $target (its target was left intact)"
+                fi
+            fi
+            backup_file "$target"
         done < <(find "$package_dir" -type f -print0)
     done
     install_with_stow
