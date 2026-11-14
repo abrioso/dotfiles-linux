@@ -29,6 +29,12 @@ warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$1"; }
 
 backup_file() {
     local file="$1"
+    # A path that already resolves into this repository (for example through a
+    # directory symlink that stow folded) is a managed file, not user data:
+    # moving it away would delete it from the checkout.
+    if [ -e "$file" ] && [[ "$(readlink -f "$file")" == "$CONFIG_DIR"/* ]]; then
+        return 0
+    fi
     if [ -e "$file" ] && [ ! -L "$file" ]; then
         mkdir -p "$BACKUP_DIR"
         local rel_path="${file#"$HOME"/}"
@@ -63,10 +69,10 @@ setup_git_config() {
         return 0
     fi
     if [ -z "$git_name" ]; then
-        git_name="${GIT_USER_NAME:-$(git config --global --get user.name 2>/dev/null || true)}"
+        git_name="${GIT_USER_NAME:-$(git config --global --includes --get user.name 2>/dev/null || true)}"
     fi
     if [ -z "$git_email" ]; then
-        git_email="${GIT_USER_EMAIL:-$(git config --global --get user.email 2>/dev/null || true)}"
+        git_email="${GIT_USER_EMAIL:-$(git config --global --includes --get user.email 2>/dev/null || true)}"
     fi
     if [ "$FORCE" = false ] && [ "$DRY_RUN" = false ]; then
         if [ -z "$git_name" ]; then
@@ -136,7 +142,8 @@ install_manual() {
 }
 
 # Carry the documented machine-specific keys of a pre-existing ~/.gitconfig
-# (regular file or symlink to another manager's file) into ~/.gitconfig.local before the tracked file replaces it.
+# (regular file or symlink to another manager's file, following its [include]
+# directives) into ~/.gitconfig.local before the tracked file replaces it.
 # Only keys missing from the local file are copied; everything else stays in
 # the backup so shared defaults are not silently overridden.
 migrate_git_settings() {
@@ -152,15 +159,16 @@ migrate_git_settings() {
         if git config --file "$local_config" --get "$key" >/dev/null 2>&1; then
             continue
         fi
+        # Empty values are kept: an empty credential.helper entry is Git's way
+        # of resetting helpers inherited from the system configuration.
         while IFS= read -r value; do
-            [ -n "$value" ] || continue
             if [ "$DRY_RUN" = true ]; then
                 info "[DRY-RUN] Would carry $key=$value into $local_config"
             else
                 git config --file "$local_config" --add "$key" "$value"
                 info "Carried $key from $old_config into $local_config"
             fi
-        done < <(git config --file "$old_config" --get-all "$key" 2>/dev/null || true)
+        done < <(git config --file "$old_config" --includes --get-all "$key" 2>/dev/null || true)
     done
 }
 
@@ -169,11 +177,23 @@ setup_git_config
 migrate_git_settings
 
 if command -v stow &>/dev/null; then
-    # Backup conflicting files before stow
+    # Backup conflicting files before stow. A symlink that does not point into
+    # this repository (another dotfiles manager) would make stow stop with a
+    # conflict; it has already been read by migrate_git_settings, so remove the
+    # link itself and leave its target untouched.
     for package_dir in "$CONFIG_DIR"/*/; do
         while IFS= read -r -d '' file; do
             rel_path="${file#"$package_dir"}"
-            backup_file "$HOME/$rel_path"
+            target="$HOME/$rel_path"
+            if [ -L "$target" ] && [[ "$(readlink -f "$target")" != "$CONFIG_DIR"/* ]]; then
+                if [ "$DRY_RUN" = true ]; then
+                    info "[DRY-RUN] Would remove foreign symlink: $target -> $(readlink "$target")"
+                else
+                    rm -f "$target"
+                    info "Removed foreign symlink: $target (its target was left intact)"
+                fi
+            fi
+            backup_file "$target"
         done < <(find "$package_dir" -type f -print0)
     done
     install_with_stow
